@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -11,16 +13,21 @@ import {
   Search,
   TrendingUp,
   FileText,
-  Filter
+  Filter,
+  PlusCircle
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Textarea } from "./ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Label } from "./ui/label";
 
 interface KnowledgeBaseManagementProps {
   onNavigate: (screen: string) => void;
 }
 
 export function KnowledgeBaseManagement({ onNavigate }: KnowledgeBaseManagementProps) {
+  const [isAddingArticle, setIsAddingArticle] = useState(false);
   const kbEntries = [
     {
       id: 1,
@@ -81,6 +88,14 @@ export function KnowledgeBaseManagement({ onNavigate }: KnowledgeBaseManagementP
     { label: "Pending Review", value: "3", change: "Needs verification", icon: CheckCircle2, color: "orange" }
   ];
 
+  const handleSaveArticle = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real application, you would handle the form submission here, 
+    // sending the data to a backend or updating your state management.
+    console.log("Article saved!");
+    setIsAddingArticle(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -121,106 +136,159 @@ export function KnowledgeBaseManagement({ onNavigate }: KnowledgeBaseManagementP
       {/* Main Content */}
       <div className="grid grid-cols-3 gap-6">
         <Card className="col-span-2 p-6">
-          <Tabs defaultValue="all">
-            <div className="flex items-center justify-between mb-6">
-              <h3>Knowledge Base Entries</h3>
-              <TabsList>
-                <TabsTrigger value="all">All Entries</TabsTrigger>
-                <TabsTrigger value="ai">AI Updates</TabsTrigger>
-                <TabsTrigger value="manual">Manual Updates</TabsTrigger>
-              </TabsList>
+          {isAddingArticle ? (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Add New Knowledge Base Article</h3>
+              <form onSubmit={handleSaveArticle} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" placeholder="Enter the article title" />
+                </div>
+                <div>
+                  <Label htmlFor="module">Module</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="finance">Finance Module</SelectItem>
+                      <SelectItem value="hr">HR Management</SelectItem>
+                      <SelectItem value="inventory">Inventory System</SelectItem>
+                      <SelectItem value="sales">Sales Dashboard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="content-type">Content Type</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a content type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Text</SelectItem>
+                      <SelectItem value="docx">DOCX</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea id="content" placeholder="Enter the article content" rows={10} />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsAddingArticle(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">Save Article</Button>
+                </div>
+              </form>
             </div>
-
-            {/* Search */}
-            <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search knowledge base entries..." 
-                  className="pl-10"
-                />
+          ) : (
+            <Tabs defaultValue="all">
+              <div className="flex items-center justify-between mb-6">
+                <h3>Knowledge Base Entries</h3>
+                <Button onClick={() => setIsAddingArticle(true)}>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add New Article
+                </Button>
               </div>
-            </div>
 
-            <TabsContent value="all" className="mt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Issue Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Added By</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {kbEntries.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {entry.isNew && (
-                            <Badge className="bg-green-500">New</Badge>
-                          )}
-                          <span>{entry.title}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{entry.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {entry.addedBy.includes('AI') ? (
-                            <Bot className="w-4 h-4 text-purple-500" />
-                          ) : (
-                            <User className="w-4 h-4 text-blue-500" />
-                          )}
-                          <span className="text-sm">{entry.addedBy}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {entry.lastUpdated}
-                      </TableCell>
-                      <TableCell>
-                        {entry.verified ? (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-xs">Verified</span>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="border-orange-500 text-orange-600">
-                            Pending
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {/* Search and Tabs */}
+              <div className="flex justify-between mb-6">
+                <div className="relative w-1/2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search knowledge base entries..." 
+                    className="pl-10"
+                  />
+                </div>
+                <TabsList>
+                  <TabsTrigger value="all">All Entries</TabsTrigger>
+                  <TabsTrigger value="ai">AI Updates</TabsTrigger>
+                  <TabsTrigger value="manual">Manual Updates</TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="all" className="mt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Issue Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Added By</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TabsContent>
+                  </TableHeader>
+                  <TableBody>
+                    {kbEntries.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {entry.isNew && (
+                              <Badge className="bg-green-500">New</Badge>
+                            )}
+                            <span>{entry.title}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{entry.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {entry.addedBy.includes('AI') ? (
+                              <Bot className="w-4 h-4 text-purple-500" />
+                            ) : (
+                              <User className="w-4 h-4 text-blue-500" />
+                            )}
+                            <span className="text-sm">{entry.addedBy}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {entry.lastUpdated}
+                        </TableCell>
+                        <TableCell>
+                          {entry.verified ? (
+                            <div className="flex items-center gap-1 text-green-600">
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span className="text-xs">Verified</span>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="border-orange-500 text-orange-600">
+                              Pending
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
 
-            <TabsContent value="ai">
-              <div className="p-8 text-center text-muted-foreground">
-                Showing AI-generated entries only...
-              </div>
-            </TabsContent>
+              <TabsContent value="ai">
+                <div className="p-8 text-center text-muted-foreground">
+                  Showing AI-generated entries only...
+                </div>
+              </TabsContent>
 
-            <TabsContent value="manual">
-              <div className="p-8 text-center text-muted-foreground">
-                Showing manually created entries only...
-              </div>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="manual">
+                <div className="p-8 text-center text-muted-foreground">
+                  Showing manually created entries only...
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
         </Card>
 
         {/* Sidebar */}

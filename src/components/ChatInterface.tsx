@@ -23,7 +23,6 @@ import {
   BrainCircuit,
 } from "lucide-react";
 import { Progress } from "./ui/progress";
-import { getLLMSuggestions } from "../lib/nlp";
 import { KBArticle } from "../data/knowledge-base";
 
 interface ChatInterfaceProps {
@@ -158,47 +157,52 @@ export function ChatInterface({
     if (!inputValue.trim()) return;
 
     const description = inputValue;
-    setCollectedData((prev) => ({
-      ...prev,
-      description: description,
-    }));
+    setCollectedData((prev) => ({ ...prev, description }));
     addMessage("user", description);
     setInputValue("");
 
+    // Show analyzing message
     setTimeout(() => {
-      addMessage(
-        "ai",
-        "Thank you for providing the details. I'm now analyzing the information using our AI to find relevant solutions in our knowledge base...",
-        <div className="flex items-center gap-2 mt-2 text-indigo-700"><BrainCircuit className="w-4 h-4 animate-pulse" /><span>Analyzing...</span></div>
-      );
+        addMessage(
+            "ai",
+            "Thank you for the details. I\'m analyzing the problem and searching our knowledge base...",
+            <div className="flex items-center gap-2 mt-2 text-indigo-700"><BrainCircuit className="w-4 h-4 animate-pulse" /><span>Analyzing...</span></div>
+        );
     }, 800);
-    
-    const suggestions = await getLLMSuggestions(description, collectedData.module);
 
-    setTimeout(() => {
-      if (suggestions.length > 0) {
-        addMessage(
-          "ai",
-          "I found some articles that might help:",
-          <div>
-            {suggestions.map(article => <SuggestedArticleCard key={article.id} article={article} />)}
-          </div>
-        );
-      } else {
-        addMessage(
-          "ai",
-          "I couldn't find any specific articles matching your issue. You can either try rephrasing your problem, or I can create a support ticket for you."
-        );
-      }
-      
-      addMessage(
-        "ai",
-        "Would you like to view these solutions in more detail, or should I proceed with creating a support ticket?",
-      );
-      
-      setCurrentStep("complete");
-    }, 2000);
-  };
+    try {
+        // Call the new backend API
+        const response = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                question: description, 
+                module: collectedData.module 
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get a response from the AI.');
+        }
+
+        const data = await response.json();
+        const aiAnswer = data.answer;
+
+        // Display the AI\'s answer
+        setTimeout(() => {
+            addMessage("ai", aiAnswer);
+            addMessage("ai", "Would you like me to create a support ticket for you, or would you like to ask another question?");
+            setCurrentStep("complete");
+        }, 2000); // Simulate network delay
+
+    } catch (error) {
+        console.error("API call failed:", error);
+        setTimeout(() => {
+            addMessage("ai", "I apologize, but I ran into an error trying to connect to the AI service. Please try again in a moment.");
+            setCurrentStep("description"); // Allow user to try again
+        }, 2000);
+    }
+};
 
   const handleSendMessage = () => {
     if (currentStep === "description") {
