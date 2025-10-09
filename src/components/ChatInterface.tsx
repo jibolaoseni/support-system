@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -19,8 +20,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Image as ImageIcon,
+  BrainCircuit,
 } from "lucide-react";
 import { Progress } from "./ui/progress";
+import { getLLMSuggestions } from "../lib/nlp";
+import { KBArticle } from "../data/knowledge-base";
 
 interface ChatInterfaceProps {
   onNavigate: (screen: string) => void;
@@ -46,6 +50,18 @@ interface CollectedData {
   module: string;
   description: string;
 }
+
+const SuggestedArticleCard = ({ article }: { article: KBArticle }) => {
+    return (
+      <div className="p-3 border rounded-lg bg-slate-100/50 mt-2">
+        <h4 className="font-semibold text-sm">{article.title}</h4>
+        <p className="text-xs text-muted-foreground line-clamp-2">{article.description}</p>
+        <div className="mt-2">
+          <Button size="sm" variant="outline" onClick={() => alert(`Navigating to ${article.title}`)}>View Article</Button>
+        </div>
+      </div>
+    )
+  }
 
 export function ChatInterface({
   onNavigate,
@@ -108,13 +124,11 @@ export function ChatInterface({
           screenshotPreview: reader.result as string,
         }));
 
-        // Add user message
         addMessage(
           "user",
           `📎 Uploaded screenshot: ${file.name}`,
         );
 
-        // AI response after a short delay
         setTimeout(() => {
           addMessage(
             "ai",
@@ -140,30 +154,50 @@ export function ChatInterface({
     }, 800);
   };
 
-  const handleDescriptionSubmit = () => {
+  const handleDescriptionSubmit = async () => {
     if (!inputValue.trim()) return;
 
+    const description = inputValue;
     setCollectedData((prev) => ({
       ...prev,
-      description: inputValue,
+      description: description,
     }));
-    addMessage("user", inputValue);
+    addMessage("user", description);
     setInputValue("");
 
     setTimeout(() => {
       addMessage(
         "ai",
-        "Thank you for providing all the details! Let me analyze this information and search our knowledge base for similar issues...",
+        "Thank you for providing the details. I'm now analyzing the information using our AI to find relevant solutions in our knowledge base...",
+        <div className="flex items-center gap-2 mt-2 text-indigo-700"><BrainCircuit className="w-4 h-4 animate-pulse" /><span>Analyzing...</span></div>
       );
+    }, 800);
+    
+    const suggestions = await getLLMSuggestions(description, collectedData.module);
 
-      setTimeout(() => {
+    setTimeout(() => {
+      if (suggestions.length > 0) {
         addMessage(
           "ai",
-          "I found some relevant articles that might help. Would you like to review them, or shall I create a support ticket for you?",
+          "I found some articles that might help:",
+          <div>
+            {suggestions.map(article => <SuggestedArticleCard key={article.id} article={article} />)}
+          </div>
         );
-        setCurrentStep("complete");
-      }, 1500);
-    }, 800);
+      } else {
+        addMessage(
+          "ai",
+          "I couldn't find any specific articles matching your issue. You can either try rephrasing your problem, or I can create a support ticket for you."
+        );
+      }
+      
+      addMessage(
+        "ai",
+        "Would you like to view these solutions in more detail, or should I proceed with creating a support ticket?",
+      );
+      
+      setCurrentStep("complete");
+    }, 2000);
   };
 
   const handleSendMessage = () => {
