@@ -50,6 +50,15 @@ interface CollectedData {
   description: string;
 }
 
+// Helper function to convert a File to a base64 string
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+});
+
+
 const SuggestedArticleCard = ({ article }: { article: KBArticle }) => {
     return (
       <div className="p-3 border rounded-lg bg-slate-100/50 mt-2">
@@ -154,30 +163,31 @@ export function ChatInterface({
   };
 
   const handleDescriptionSubmit = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || !collectedData.screenshot) return;
 
     const description = inputValue;
     setCollectedData((prev) => ({ ...prev, description }));
     addMessage("user", description);
     setInputValue("");
 
-    // Show analyzing message
     setTimeout(() => {
         addMessage(
             "ai",
-            "Thank you for the details. I\'m analyzing the problem and searching our knowledge base...",
+            "Thank you. I am now analyzing your description and screenshot with our AI to find the best solution...",
             <div className="flex items-center gap-2 mt-2 text-indigo-700"><BrainCircuit className="w-4 h-4 animate-pulse" /><span>Analyzing...</span></div>
         );
     }, 800);
 
     try {
-        // Call the new backend API
+        const imageBase64 = await toBase64(collectedData.screenshot);
+
         const response = await fetch('/api/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 question: description, 
-                module: collectedData.module 
+                module: collectedData.module,
+                imageBase64: imageBase64 
             }),
         });
 
@@ -188,19 +198,18 @@ export function ChatInterface({
         const data = await response.json();
         const aiAnswer = data.answer;
 
-        // Display the AI\'s answer
         setTimeout(() => {
             addMessage("ai", aiAnswer);
-            addMessage("ai", "Would you like me to create a support ticket for you, or would you like to ask another question?");
+            addMessage("ai", "Is there anything else I can help you with?");
             setCurrentStep("complete");
-        }, 2000); // Simulate network delay
+        }, 1200);
 
     } catch (error) {
         console.error("API call failed:", error);
         setTimeout(() => {
-            addMessage("ai", "I apologize, but I ran into an error trying to connect to the AI service. Please try again in a moment.");
-            setCurrentStep("description"); // Allow user to try again
-        }, 2000);
+            addMessage("ai", "I apologize, but I ran into an error connecting to the AI service. Please double-check your API key and try again.");
+            setCurrentStep("description");
+        }, 1200);
     }
 };
 
