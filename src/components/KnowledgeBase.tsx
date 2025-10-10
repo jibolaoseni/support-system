@@ -1,50 +1,60 @@
+
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Search, FileText, Video, Globe, ThumbsUp, ThumbsDown, Star } from "lucide-react";
+import { knowledgeBase, KBArticle } from "../data/knowledge-base"; // Using the central data source
 
 interface KnowledgeBaseProps {
   onNavigate: (screen: string) => void;
 }
 
-export function KnowledgeBase({ onNavigate }: KnowledgeBaseProps) {
-  const articles = [
-    {
-      id: 1,
-      title: "Resolving Login Failure in Finance Module",
-      summary: "Step-by-step guide to fix authentication issues in the Finance module including token refresh and cache clearing.",
-      category: "Authentication",
-      type: "article",
-      rating: 4.8,
-      views: 1243
-    },
-    {
-      id: 2,
-      title: "Updating Authentication Token",
-      summary: "Video walkthrough showing how to manually update authentication tokens when automatic refresh fails.",
-      category: "Authentication",
-      type: "video",
-      rating: 4.6,
-      views: 892
-    },
-    {
-      id: 3,
-      title: "Common Credential Errors",
-      summary: "Wiki documentation covering the most frequent credential-related errors and their solutions.",
-      category: "Troubleshooting",
-      type: "wiki",
-      rating: 4.9,
-      views: 2156
-    }
-  ];
+const ArticleCard = ({ article, onOpen }: { article: KBArticle, onOpen: (title: string) => void }) => (
+  <Card className="p-6 hover:shadow-md transition-shadow">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex-1">
+        <div className="flex items-center gap-3 mb-2">
+          <h3 className="font-semibold">{article.title}</h3>
+          {/* Example of a badge, can be driven by data later */}
+          {article.tags.includes("AI Recommended") && (
+            <Badge className="bg-blue-500">AI Recommended</Badge>
+          )}
+        </div>
+        <p className="text-muted-foreground mb-4 line-clamp-2">{article.description}</p>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            {/* Dummy data for now, can be added to KB */}
+            <span>{4.8}</span> 
+          </div>
+          <span>•</span>
+          <span>{article.views || 0} views</span>
+          <span>•</span>
+          <Badge variant="outline">{article.module}</Badge>
+        </div>
+      </div>
+      <Button className="rounded-full" onClick={() => onOpen(article.title)}>Open</Button>
+    </div>
+  </Card>
+);
 
-  const recommended = [
-    "Session Timeout Configuration",
-    "Password Reset Best Practices",
-    "Multi-Factor Authentication Setup"
-  ];
+export function KnowledgeBase({ onNavigate }: KnowledgeBaseProps) {
+
+  // Filter articles based on their type from the central knowledge base
+  const documents = knowledgeBase.filter(a => a.type === 'article');
+  const videos = knowledgeBase.filter(a => a.type === 'video');
+  const wikis = knowledgeBase.filter(a => a.type === 'wiki');
+
+  // Use some articles as recommended for demonstration
+  const recommended = knowledgeBase.slice(0, 3);
+
+  const handleOpenArticle = (title: string) => {
+    alert(`Navigating to article: "${title}"`);
+    // In a real app, you would navigate to a detailed view:
+    // onNavigate('article-detail', { articleTitle: title });
+  };
 
   return (
     <div className="flex h-full gap-6">
@@ -56,86 +66,75 @@ export function KnowledgeBase({ onNavigate }: KnowledgeBaseProps) {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input 
               placeholder="Search knowledge base with AI-powered suggestions..." 
-              className="pl-12 h-12 rounded-xl"
+              className="pl-12 h-12 rounded-xl bg-white shadow-sm"
             />
           </div>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="documents" className="flex-1 flex flex-col">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 grid w-full grid-cols-3">
             <TabsTrigger value="documents">
               <FileText className="w-4 h-4 mr-2" />
-              Documents
+              Documents ({documents.length})
             </TabsTrigger>
             <TabsTrigger value="videos">
               <Video className="w-4 h-4 mr-2" />
-              Videos
+              Videos ({videos.length})
             </TabsTrigger>
             <TabsTrigger value="wiki">
               <Globe className="w-4 h-4 mr-2" />
-              Wiki
+              Wiki ({wikis.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="documents" className="flex-1 space-y-4">
-            {articles.map((article) => (
-              <Card key={article.id} className="p-6 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3>{article.title}</h3>
-                      {article.id === 1 && (
-                        <Badge className="bg-blue-500">AI Recommended</Badge>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground mb-4">{article.summary}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span>{article.rating}</span>
-                      </div>
-                      <span>•</span>
-                      <span>{article.views} views</span>
-                      <span>•</span>
-                      <Badge variant="outline">{article.category}</Badge>
-                    </div>
-                  </div>
-                  <Button className="rounded-full">Open Article</Button>
-                </div>
-              </Card>
-            ))}
+            {documents.length > 0 ? (
+              documents.map((article) => (
+                <ArticleCard key={article.id} article={article} onOpen={handleOpenArticle} />
+              ))
+            ) : (
+              <Card className="p-6 text-center text-muted-foreground">No documents found.</Card>
+            )}
           </TabsContent>
 
-          <TabsContent value="videos" className="flex-1">
-            <Card className="p-6">
-              <p className="text-muted-foreground">Video tutorials will appear here...</p>
-            </Card>
+          <TabsContent value="videos" className="flex-1 space-y-4">
+            {videos.length > 0 ? (
+              videos.map((article) => (
+                <ArticleCard key={article.id} article={article} onOpen={handleOpenArticle} />
+              ))
+            ) : (
+              <Card className="p-6 text-center text-muted-foreground">No videos found.</Card>
+            )}
           </TabsContent>
 
-          <TabsContent value="wiki" className="flex-1">
-            <Card className="p-6">
-              <p className="text-muted-foreground">Wiki articles will appear here...</p>
-            </Card>
+          <TabsContent value="wiki" className="flex-1 space-y-4">
+            {wikis.length > 0 ? (
+              wikis.map((article) => (
+                <ArticleCard key={article.id} article={article} onOpen={handleOpenArticle} />
+              ))
+            ) : (
+              <Card className="p-6 text-center text-muted-foreground">No wiki entries found.</Card>
+            )}
           </TabsContent>
         </Tabs>
 
         {/* Feedback Section */}
-        <Card className="p-6 mt-6">
+        <Card className="p-6 mt-6 bg-white shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h4>Did this solve your problem?</h4>
-              <p className="text-muted-foreground">Your feedback helps us improve</p>
+              <h4 className="font-semibold">Did this solve your problem?</h4>
+              <p className="text-sm text-muted-foreground">Your feedback helps us improve our support.</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="rounded-full">
+              <Button variant="outline" className="rounded-full bg-white hover:bg-slate-50">
                 <ThumbsUp className="w-4 h-4 mr-2" />
                 Yes
               </Button>
               <Button 
                 variant="outline" 
-                className="rounded-full"
-                onClick={() => onNavigate('ticket')}
+                className="rounded-full bg-white hover:bg-slate-50"
+                onClick={() => onNavigate('ticket')} // Navigate to ticket creation
               >
                 <ThumbsDown className="w-4 h-4 mr-2" />
                 No, Create Ticket
@@ -146,18 +145,19 @@ export function KnowledgeBase({ onNavigate }: KnowledgeBaseProps) {
       </div>
 
       {/* Sidebar */}
-      <div className="w-80">
-        <Card className="p-4">
-          <h4 className="mb-4">AI Recommended Articles</h4>
-          <div className="space-y-3">
-            {recommended.map((title, idx) => (
+      <div className="w-80 flex-shrink-0">
+        <Card className="p-4 bg-white shadow-sm">
+          <h4 className="mb-4 font-semibold px-2">AI Recommended</h4>
+          <div className="space-y-2">
+            {recommended.map((rec) => (
               <div 
-                key={idx}
-                className="p-3 bg-gray-50 rounded-lg border border-border hover:bg-gray-100 cursor-pointer transition-colors"
+                key={rec.id}
+                className="p-3 rounded-lg border border-transparent hover:border-border hover:bg-slate-50 cursor-pointer transition-colors"
+                onClick={() => handleOpenArticle(rec.title)}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3">
                   <FileText className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm">{title}</p>
+                  <p className="text-sm font-medium text-slate-800">{rec.title}</p>
                 </div>
               </div>
             ))}
