@@ -1,7 +1,5 @@
 
-  # AI-Powered Support System
-
-  This is a code bundle for AI-Powered Support System. The original project is available at https://www.figma.com/design/YQNT97IkXXBnuK6OdKYEGF/AI-Powered-Support-System.
+  # AI-Powered Support System for SAP Cloud H4SANA
 
   ## Running the code
 
