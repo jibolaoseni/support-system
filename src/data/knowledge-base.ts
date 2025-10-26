@@ -2,6 +2,7 @@
 export type KBContentType = 'webpage' | 'docx' | 'excel' | 'video' | 'text';
 
 export interface KBArticle {
+  score: number;
   id: string;
   title: string;
   module: string;

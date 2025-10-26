@@ -1,7 +1,11 @@
 
+"use client";
+
+import { ElementType } from 'react';
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { 
@@ -20,15 +24,23 @@ interface ConsultantViewProps {
   onNavigate: (screen: string) => void;
 }
 
-// --- START: Unified StatCard --- //
-const colorStyles = {
+// --- START: Unified StatCard (with strict typing) --- //
+
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: ElementType;
+    color: 'blue' | 'green' | 'orange' | 'purple';
+}
+
+const colorStyles: { [key: string]: { iconBg: string; iconColor: string } } = {
   blue: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
   green: { iconBg: 'bg-green-100', iconColor: 'text-green-600' },
   orange: { iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
   purple: { iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
 };
 
-const StatCard = ({ title, value, icon: Icon, color }) => {
+const StatCard = ({ title, value, icon: Icon, color }: StatCardProps) => {
     const styles = colorStyles[color];
     return (
         <Card className="p-4 flex-1 bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl">
@@ -74,7 +86,7 @@ export function ConsultantView({ onNavigate }: ConsultantViewProps) {
     }
   ];
 
-  const stats = [
+  const stats: StatCardProps[] = [
     { title: "Open Tickets", value: "3", icon: Clock, color: "blue" },
     { title: "Resolved Today", value: "8", icon: CheckCircle2, color: "green" },
     { title: "Avg Response", value: "1.8 hrs", icon: AlertCircle, color: "orange" },
@@ -140,12 +152,7 @@ export function ConsultantView({ onNavigate }: ConsultantViewProps) {
                       <TableCell>
                         <Badge 
                           variant="outline"
-                          className={`font-semibold ${
-                            ticket.priority === 'High' ? 'border-red-500 text-red-600 bg-red-50' :
-                            ticket.priority === 'Medium' ? 'border-orange-500 text-orange-600 bg-orange-50' :
-                            'border-gray-300 text-gray-600 bg-gray-50'
-                          }`}
-                        >
+                          className={`font-semibold ${ticket.priority === 'High' ? 'border-red-500 text-red-600 bg-red-50' : ticket.priority === 'Medium' ? 'border-orange-500 text-orange-600 bg-orange-50' : 'border-gray-300 text-gray-600 bg-gray-50'}`}>
                           {ticket.priority}
                         </Badge>
                       </TableCell>
